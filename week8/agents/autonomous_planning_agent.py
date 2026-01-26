@@ -6,6 +6,12 @@ from agents.ensemble_agent import EnsembleAgent
 from agents.messaging_agent import MessagingAgent
 from openai import OpenAI
 import json
+import os
+
+# Disable LiteLLM's automatic model routing by setting environment variables
+# This prevents LiteLLM from intercepting OpenAI calls
+os.environ.setdefault("LITELLM_TURN_OFF_MESSAGE_LOGGING", "True")
+os.environ.setdefault("LITELLM_LOG", "ERROR")
 
 
 class AutonomousPlanningAgent(Agent):
@@ -21,7 +27,12 @@ class AutonomousPlanningAgent(Agent):
         self.scanner = ScannerAgent()
         self.ensemble = EnsembleAgent(collection)
         self.messenger = MessagingAgent()
-        self.openai = OpenAI()
+        # Explicitly use OpenAI's official endpoint to bypass LiteLLM interception
+        api_key = os.getenv("OPENAI_API_KEY")
+        self.openai = OpenAI(
+            api_key=api_key,
+            base_url="https://api.openai.com/v1"  # Explicit OpenAI endpoint to bypass LiteLLM
+        )
         self.memory = None
         self.opportunity = None
         self.log("Autonomous Planning Agent is ready")
